@@ -6,7 +6,7 @@ import os
 from tabulate import tabulate
 
 ser = serial.Serial(
-       port='/dev/tty.usbmodem1421',
+       port='/dev/tty.usbmodem1411',
        baudrate = 9600,
        parity=serial.PARITY_NONE,
        stopbits=serial.STOPBITS_ONE,
@@ -19,10 +19,10 @@ mac=[]
 rssi=[]
 storage=[]
 rssiStore=[]
-recent=[]
 count=0
 device=[]
 deviceBuffer=[]
+storageDevice = []
 
 while True:
     for line in ser.read():
@@ -53,32 +53,56 @@ while True:
 
         	if address in mac:
         		i = mac.index(address)
-        		rssi[i] = value
-        		recent[i] = 0
+        		rssi[i] = int(value)
+        		storageDevice[i].append(int(value))
         		device[i][1] = value
-        	else:
+        		device[i][6] = 0
+        	else: 		
         		if(address != ''):
         			mac.append(address)
-        			rssi.append(value)
-        			recent.append(0)
+        			rssi.append(int(value))
+        			deviceStorage=[]
+        			deviceStorage.append(int(value))
+        			storageDevice.append(deviceStorage)
         			deviceBuffer=[]
         			deviceBuffer.append(address)
-        			deviceBuffer.append(value)
+        			deviceBuffer.append(int(value))
+        			deviceBuffer.append(0)
+        			deviceBuffer.append(0)
+        			deviceBuffer.append(0)
+        			deviceBuffer.append(0)
+        			deviceBuffer.append(0)
         			device.append(deviceBuffer)
 
+        	z=0
+        	while z<len(device):
+        		device[z][6]+=1
+        		z+=1
 
-        	recent[:]=[x+1 for x in recent]
+        	# recent[:]=[x+1 for x in recent]
         	if(count==30):
+        		deviceStorage=[]
         		count=0
         		j = 0
-        		while j < len(recent):
-				   if recent[j] > 20:
-				    	mac.pop(j)
-	        			rssi.pop(j)
-	        			recent.pop(j)
-	        			device.pop(j)
-				   else:
-       					j += 1
+        		while j < len(device):
+				   	if device[j][6]>20:
+				   		mac.pop(j)
+				   		rssi.pop(j)
+				   		device.pop(j)
+				   		storageDevice.pop(j)
+				   	j+=1
+
+        		k=0
+        		while k< len(storageDevice):
+        			if(len(storageDevice[k])!=0):
+	        			m=0
+	        			device[k][2]=sum(storageDevice[k])/len(storageDevice[k])
+	        			device[k][3]=max(storageDevice[k])
+	        			device[k][4]=min(storageDevice[k])
+	        			device[k][5]=device[k][3]-device[k][4]
+	        			storageDevice[k]=[]
+	        		k+=1
+        		
 
        		
         	# print (mac)
@@ -86,8 +110,9 @@ while True:
         	# print(device)
         	# print (recent)
         	# print line
+        	# print(storageDevice)
         	os.system('clear')
-        	print tabulate(device)
+        	print tabulate(device, headers=["Mac","RSSI","Average", "Max", "Min", "Range", "Last Update"])
         	
         	flag = 0
         	count += 1

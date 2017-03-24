@@ -6,8 +6,8 @@ import os
 from tabulate import tabulate
 
 ser = serial.Serial(
-       port='/dev/tty.usbmodem1411',
-       baudrate = 9600,
+       port= str(sys.argv[1]),#'/dev/tty.usbserial-A402F0YH',#'/dev/tty.usbmodem1411',
+       baudrate = int(sys.argv[2]),#115200,
        parity=serial.PARITY_NONE,
        stopbits=serial.STOPBITS_ONE,
        bytesize=serial.EIGHTBITS,
@@ -27,23 +27,17 @@ storageDevice = []
 while True:
     for line in ser.read():
     	if line != '\n':
-    		if(line==']'):
-    			flag=0;
+    		if(line=='-'and flag==0):
+    			flag=1
 
-    		if(flag==2 and line!=' '):
-    			if(line =='\r'):
-    				flag=0;
-    			else:
-    				rssiStore.append(line)
+    		if((line=='\r'and flag==1) or (line=='a' and flag==1)):
+    			flag=2
 
     		if(flag==1 and line!=' '):
+    			rssiStore.append(line)
+   
+    		if(flag==0 and line!=' '):
     			storage.append(line)
-
-    		if(line=='['):
-    			flag=1;
-    		if(line=='i'):
-    			flag=2;
-
         	# sys.stdout.write(line),
         else:
         	address = ''.join(storage)
